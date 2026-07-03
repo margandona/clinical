@@ -1,0 +1,14 @@
+{
+  "name": "maxilus-clinical",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema de gestión para clínicas dentales",
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces"
+  },
+  "workspaces": [
+    "client",
+    "server"
+  ]
+}

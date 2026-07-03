@@ -1,0 +1,17 @@
+{
+  "name": "maxilus-client",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "vue": "^3.4",
+    "firebase": "^10"
+  },
+  "devDependencies": {
+    "vite": "^5",
+    "@vitejs/plugin-vue": "^5"
+  }
+}
