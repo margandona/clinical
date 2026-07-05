@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// E11 (Seguridad y roles): el rol/clinicaId vive en el custom claim del
+// ID token (asignado por la Cloud Function `setUserRole`, con Admin SDK,
+// que no pasa por estas reglas). El resto de las colecciones clinicas
+// (pacientes, citas, presupuestos, etc.) siguen en deny-all hasta que se
+// construyan sus epicas correspondientes (E1/E2/E12...).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /usuarios/{uid} {
+      // Cada usuario solo puede leer su propio documento de rol.
+      allow read: if request.auth != null && request.auth.uid == uid;
+      // Solo se escribe via Admin SDK (setUserRole), nunca desde el cliente.
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
