@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
-import { useAuthStore } from "@/stores/auth";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import AppLayout from "@/layouts/AppLayout.vue";
 
-onMounted(() => {
-  useAuthStore().init();
-});
+const route = useRoute();
+const isBlank = computed(() => !!route.meta.blank);
 </script>
 
 <template>
-  <router-view />
+  <AppLayout v-if="!isBlank">
+    <router-view />
+  </AppLayout>
+  <router-view v-else />
 </template>

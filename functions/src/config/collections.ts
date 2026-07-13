@@ -6,4 +6,6 @@ export const COLLECTIONS = {
   pacientes: "pacientes",
   usuarios: "usuarios",
   citas: "citas",
+  presupuestos: "presupuestos",
+  caja: "caja",
 } as const;

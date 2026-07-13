@@ -2,16 +2,279 @@ rules_version = '2';
 
 // E11 (Seguridad y roles): el rol/clinicaId vive en el custom claim del
 // ID token (asignado por la Cloud Function `setUserRole`, con Admin SDK,
-// que no pasa por estas reglas). El resto de las colecciones clinicas
-// (pacientes, citas, presupuestos, etc.) siguen en deny-all hasta que se
-// construyan sus epicas correspondientes (E1/E2/E12...).
+// que no pasa por estas reglas). Cualquier colección de negocio que todavía
+// no tenga épica construida (ficha clínica, recetas, consentimientos,
+// radiografías...) sigue en deny-all por el match final de este archivo.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /usuarios/{uid} {
-      // Cada usuario solo puede leer su propio documento de rol.
-      allow read: if request.auth != null && request.auth.uid == uid;
-      // Solo se escribe via Admin SDK (setUserRole), nunca desde el cliente.
+      // Cada usuario lee su propio documento de rol; el admin además
+      // puede leer/listar todos los usuarios de su clínica (panel de
+      // gestión de usuarios).
+      allow read: if request.auth != null
+        && (request.auth.uid == uid
+          || (request.auth.token.rol == 'admin' && request.auth.token.clinicaId == resource.data.clinicaId));
+      // Solo se escribe via Admin SDK (Cloud Function setUserRole), nunca
+      // directamente desde el cliente.
       allow write: if false;
+    }
+
+    // E1 (catálogo): servicios (especialidades) y profesionales.
+    // Lectura: cualquier usuario autenticado de la misma clínica (lo
+    // necesitarán agenda/portal más adelante). Escritura: solo admin.
+    function esAdminDeLaClinica(clinicaId) {
+      return request.auth != null
+        && request.auth.token.rol == 'admin'
+        && request.auth.token.clinicaId == clinicaId;
+    }
+
+    match /especialidades/{especialidadId} {
+      allow read: if request.auth != null
+        && request.auth.token.clinicaId == resource.data.clinicaId;
+
+      allow create: if esAdminDeLaClinica(request.resource.data.clinicaId)
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.duracionMinutosDefault is number
+        && request.resource.data.duracionMinutosDefault > 0;
+
+      allow update: if esAdminDeLaClinica(resource.data.clinicaId)
+        && request.resource.data.clinicaId == resource.data.clinicaId
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.duracionMinutosDefault is number
+        && request.resource.data.duracionMinutosDefault > 0;
+
+      allow delete: if esAdminDeLaClinica(resource.data.clinicaId);
+    }
+
+    match /profesionales/{profesionalId} {
+      allow read: if request.auth != null
+        && request.auth.token.clinicaId == resource.data.clinicaId;
+
+      allow create: if esAdminDeLaClinica(request.resource.data.clinicaId)
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.especialidadIds is list;
+
+      // Admin edita el nombre y/o la lista de especialidades asignadas
+      // (asignación de servicios a un profesional).
+      allow update: if esAdminDeLaClinica(resource.data.clinicaId)
+        && request.resource.data.clinicaId == resource.data.clinicaId
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.especialidadIds is list;
+
+      allow delete: if esAdminDeLaClinica(resource.data.clinicaId);
+    }
+
+    // E1 (catálogo): boxes.
+    // Lectura: cualquier usuario autenticado de la misma clínica. Escritura:
+    // solo admin (mismas reglas que especialidades/profesionales).
+    match /boxes/{boxId} {
+      allow read: if request.auth != null
+        && request.auth.token.clinicaId == resource.data.clinicaId;
+
+      allow create: if esAdminDeLaClinica(request.resource.data.clinicaId)
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.tipo in ["dental", "medico"];
+
+      allow update: if esAdminDeLaClinica(resource.data.clinicaId)
+        && request.resource.data.clinicaId == resource.data.clinicaId
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.tipo in ["dental", "medico"];
+
+      allow delete: if esAdminDeLaClinica(resource.data.clinicaId);
+    }
+
+    // Pacientes: identificados por RUT (id del documento). Lectura para el
+    // personal de la clínica (admin/secretaria/dentista); escritura
+    // (alta, edición de datos, bloqueo manual) para admin/secretaria. El
+    // portal de autoregistro del paciente (Fase 2) no está construido aún.
+    function esPersonalDeLaClinica(clinicaId) {
+      return request.auth != null
+        && request.auth.token.clinicaId == clinicaId
+        && request.auth.token.rol in ["admin", "secretaria", "dentista"];
+    }
+
+    function esAdminOSecretariaDeLaClinica(clinicaId) {
+      return request.auth != null
+        && request.auth.token.clinicaId == clinicaId
+        && request.auth.token.rol in ["admin", "secretaria"];
+    }
+
+    match /pacientes/{pacienteId} {
+      allow read: if esPersonalDeLaClinica(resource.data.clinicaId);
+
+      allow create: if esAdminOSecretariaDeLaClinica(request.resource.data.clinicaId)
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.bloqueado == false;
+
+      allow update: if esAdminOSecretariaDeLaClinica(resource.data.clinicaId)
+        && request.resource.data.clinicaId == resource.data.clinicaId
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.bloqueado is bool;
+    }
+
+    // E2 (agendamiento): citas.
+    // Reglas simplificadas para el MVP — validación de solapamiento/buffer
+    // de box y de disponibilidad del profesional se hace en el cliente
+    // (ver AgendaView.vue); estas reglas solo garantizan forma de los
+    // datos y quién puede tocar qué. Anticipación mínima, feriados y
+    // penalización de cancelación siguen sin definirse
+    // (Contexto/03-preguntas-abiertas.md, punto 3) y no están aplicadas
+    // aquí todavía.
+    function esDentistaDeLaCita(clinicaId, profesionalId) {
+      return request.auth != null
+        && request.auth.token.clinicaId == clinicaId
+        && request.auth.token.rol == "dentista"
+        && request.auth.token.profesionalId == profesionalId;
+    }
+
+    function esPacienteDeLaCita(clinicaId, pacienteId) {
+      return request.auth != null
+        && request.auth.token.clinicaId == clinicaId
+        && request.auth.token.rol == "paciente"
+        && request.auth.token.pacienteId == pacienteId;
+    }
+
+    function datosCitaValidos(datos) {
+      return datos.pacienteId is string && datos.pacienteId.size() > 0
+        && datos.profesionalId is string && datos.profesionalId.size() > 0
+        && datos.boxId is string && datos.boxId.size() > 0
+        && datos.especialidadId is string && datos.especialidadId.size() > 0
+        && datos.inicio is timestamp
+        && datos.duracionMinutos is number && datos.duracionMinutos > 0
+        && datos.estado in ["reservada", "confirmada", "cancelada", "inasistencia", "atendida"]
+        && datos.esSobrecupo is bool;
+    }
+
+    match /citas/{citaId} {
+      allow read: if esAdminOSecretariaDeLaClinica(resource.data.clinicaId)
+        || esDentistaDeLaCita(resource.data.clinicaId, resource.data.profesionalId)
+        || esPacienteDeLaCita(resource.data.clinicaId, resource.data.pacienteId);
+
+      allow create: if esAdminOSecretariaDeLaClinica(request.resource.data.clinicaId)
+        && datosCitaValidos(request.resource.data);
+
+      // Admin/secretaría editan cualquier campo (reagendar, marcar
+      // sobrecupo, etc). El dentista de la cita solo puede cambiar su
+      // estado (ej. confirmar asistencia o marcar inasistencia).
+      allow update: if (esAdminOSecretariaDeLaClinica(resource.data.clinicaId)
+          && request.resource.data.clinicaId == resource.data.clinicaId
+          && datosCitaValidos(request.resource.data))
+        || (esDentistaDeLaCita(resource.data.clinicaId, resource.data.profesionalId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["estado"])
+          && request.resource.data.estado in ["confirmada", "atendida", "inasistencia"]);
+
+      // Sin delete: cancelar se modela como estado = "cancelada" para
+      // conservar el historial (auditoría, ver riesgos en 04-plan-desarrollo.md).
+    }
+
+    // E12 (ficha clínica): notas de atención por paciente. Solo admin y
+    // dentista leen/escriben — son datos clínicos sensibles (RNF-01),
+    // secretaría no tiene acceso (su rol es agenda/recepción, no clínico).
+    // No se editan ni se borran una vez creadas (integridad del registro
+    // clínico); un error se corrige agregando una nota nueva.
+    function esAdminODentistaDeLaClinica(clinicaId) {
+      return request.auth != null
+        && request.auth.token.clinicaId == clinicaId
+        && request.auth.token.rol in ["admin", "dentista"];
+    }
+
+    function datosNotaClinicaValidos(datos) {
+      return datos.pacienteId is string && datos.pacienteId.size() > 0
+        && datos.profesionalId is string && datos.profesionalId.size() > 0
+        && datos.motivo is string && datos.motivo.size() > 0
+        && datos.notas is string && datos.notas.size() > 0
+        && datos.fecha is timestamp;
+    }
+
+    // El admin puede firmar un documento clínico a nombre de cualquier
+    // profesional; un dentista solo puede firmarlo como sí mismo (evita
+    // suplantar a otro). Se reutiliza para notas clínicas y recetas.
+    function puedeFirmarComoProfesional(datos) {
+      return request.auth.token.rol == "admin"
+        || (request.auth.token.rol == "dentista" && request.auth.token.profesionalId == datos.profesionalId);
+    }
+
+    match /notasClinicas/{notaId} {
+      allow read: if esAdminODentistaDeLaClinica(resource.data.clinicaId);
+
+      allow create: if esAdminODentistaDeLaClinica(request.resource.data.clinicaId)
+        && puedeFirmarComoProfesional(request.resource.data)
+        && datosNotaClinicaValidos(request.resource.data);
+    }
+
+    // E15 (recetas): documento formal emitido por el profesional, ligado a
+    // la ficha del paciente. Mismo modelo de acceso que las notas clínicas
+    // (admin + dentista) y misma inmutabilidad (sin update/delete; un error
+    // se corrige emitiendo una receta nueva).
+    function itemsRecetaValidos(items) {
+      return items is list && items.size() > 0;
+    }
+
+    function datosRecetaValidos(datos) {
+      return datos.pacienteId is string && datos.pacienteId.size() > 0
+        && datos.profesionalId is string && datos.profesionalId.size() > 0
+        && datos.fecha is timestamp
+        && itemsRecetaValidos(datos.items);
+    }
+
+    match /recetas/{recetaId} {
+      allow read: if esAdminODentistaDeLaClinica(resource.data.clinicaId);
+
+      allow create: if esAdminODentistaDeLaClinica(request.resource.data.clinicaId)
+        && puedeFirmarComoProfesional(request.resource.data)
+        && datosRecetaValidos(request.resource.data);
+    }
+
+    // E13 (presupuestos): admin/secretaria ven y gestionan todos los de la
+    // clínica; el paciente solo puede leer los suyos (portal simple, sin
+    // seguimiento automático todavía — RF-06/E5 queda para más adelante).
+    function datosPresupuestoValidos(datos) {
+      return datos.pacienteId is string && datos.pacienteId.size() > 0
+        && datos.tratamiento is string && datos.tratamiento.size() > 0
+        && datos.monto is number && datos.monto > 0
+        && datos.estado in ["pendiente", "aceptado", "rechazado"]
+        && datos.emision is timestamp;
+    }
+
+    match /presupuestos/{presupuestoId} {
+      allow read: if esPersonalDeLaClinica(resource.data.clinicaId)
+        || esPacienteDeLaCita(resource.data.clinicaId, resource.data.pacienteId);
+
+      allow create: if esAdminOSecretariaDeLaClinica(request.resource.data.clinicaId)
+        && datosPresupuestoValidos(request.resource.data);
+
+      allow update: if esAdminOSecretariaDeLaClinica(resource.data.clinicaId)
+        && request.resource.data.clinicaId == resource.data.clinicaId
+        && datosPresupuestoValidos(request.resource.data);
+    }
+
+    // E14 (caja): exclusivo de admin/secretaria (ver también nav.ts, la
+    // ruta /caja no está expuesta a dentista ni paciente).
+    function datosMovimientoValidos(datos) {
+      return datos.concepto is string && datos.concepto.size() > 0
+        && datos.tipo in ["ingreso", "egreso"]
+        && datos.monto is number && datos.monto > 0
+        && datos.metodo in ["Efectivo", "Débito", "Transferencia", "Tarjeta"]
+        && datos.fecha is timestamp;
+    }
+
+    match /caja/{movimientoId} {
+      allow read: if esAdminOSecretariaDeLaClinica(resource.data.clinicaId);
+
+      allow create: if esAdminOSecretariaDeLaClinica(request.resource.data.clinicaId)
+        && datosMovimientoValidos(request.resource.data);
+
+      // Los movimientos de caja no se editan ni se borran una vez
+      // registrados (integridad del libro de caja); un error se corrige
+      // con un movimiento de reverso, no editando el original.
     }
 
     match /{document=**} {

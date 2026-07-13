@@ -1,4 +1,83 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "citas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "inicio", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "citas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "profesionalId", "order": "ASCENDING" },
+        { "fieldPath": "inicio", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "citas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "boxId", "order": "ASCENDING" },
+        { "fieldPath": "inicio", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "citas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "pacienteId", "order": "ASCENDING" },
+        { "fieldPath": "inicio", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "presupuestos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "emision", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "presupuestos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "pacienteId", "order": "ASCENDING" },
+        { "fieldPath": "emision", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "caja",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notasClinicas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "pacienteId", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "recetas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "pacienteId", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

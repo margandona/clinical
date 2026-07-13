@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
+import logo from "@/assets/logo.png";
 
 const router = useRouter();
 const email = ref("");
@@ -25,21 +26,100 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <main>
-    <h1>Iniciar sesion</h1>
-    <form @submit.prevent="handleSubmit">
-      <div>
+  <main class="login-page">
+    <form class="login-card card" @submit.prevent="handleSubmit">
+      <img :src="logo" alt="Maxilus Dental" class="login-logo" />
+      <h1>Iniciar sesión</h1>
+      <p class="login-subtitle">Sistema de gestión Maxilus Dental</p>
+
+      <div class="field">
         <label for="email">Email</label>
-        <input id="email" v-model="email" type="email" required />
+        <input id="email" v-model="email" type="email" autocomplete="email" required />
       </div>
-      <div>
-        <label for="password">Contrasena</label>
-        <input id="password" v-model="password" type="password" required />
+      <div class="field">
+        <label for="password">Contraseña</label>
+        <input
+          id="password"
+          v-model="password"
+          type="password"
+          autocomplete="current-password"
+          required
+        />
       </div>
-      <p v-if="error" role="alert">{{ error }}</p>
-      <button type="submit" :disabled="loading">
+
+      <p v-if="error" role="alert" class="login-error">{{ error }}</p>
+
+      <button type="submit" class="btn btn-primary login-submit" :disabled="loading">
         {{ loading ? "Ingresando..." : "Ingresar" }}
       </button>
+      <router-link to="/" class="login-back">← Volver al inicio</router-link>
     </form>
   </main>
 </template>
+
+<style scoped>
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: radial-gradient(120% 100% at 50% 0%, var(--brand-purple-light) 0%, var(--page) 55%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(32, 16, 41, 0.05), 0 20px 48px rgba(32, 16, 41, 0.1);
+  padding: 2.25rem 2rem;
+}
+
+.login-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  align-self: center;
+  margin-bottom: 0.75rem;
+}
+
+.login-card h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.25rem;
+}
+
+.login-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.login-error {
+  color: var(--critical-text);
+  font-size: 0.88rem;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.login-submit {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.login-back {
+  margin-top: 0.875rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.login-back:hover {
+  color: var(--brand-purple);
+}
+</style>

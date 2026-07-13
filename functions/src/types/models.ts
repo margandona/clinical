@@ -68,3 +68,56 @@ export interface Cita {
   estado: EstadoCita;
   esSobrecupo: boolean;
 }
+
+export type EstadoPresupuesto = "pendiente" | "aceptado" | "rechazado";
+
+export interface Presupuesto {
+  id: string;
+  clinicaId: string;
+  pacienteId: string;
+  especialidadId?: string; // opcional: permite agrupar ingresos por especialidad en métricas
+  tratamiento: string; // descripción libre (ej. "Ortodoncia (plan anual)")
+  monto: number;
+  estado: EstadoPresupuesto;
+  emision: Timestamp;
+}
+
+export interface NotaClinica {
+  id: string;
+  clinicaId: string;
+  pacienteId: string;
+  profesionalId: string;
+  fecha: Timestamp;
+  motivo: string;
+  notas: string;
+}
+
+export interface ItemReceta {
+  medicamento: string;
+  indicaciones: string;
+}
+
+export interface Receta {
+  id: string;
+  clinicaId: string;
+  pacienteId: string;
+  profesionalId: string;
+  fecha: Timestamp;
+  items: ItemReceta[];
+  observaciones?: string;
+}
+
+export type TipoMovimientoCaja = "ingreso" | "egreso";
+export type MetodoPago = "Efectivo" | "Débito" | "Transferencia" | "Tarjeta";
+
+export interface MovimientoCaja {
+  id: string;
+  clinicaId: string;
+  fecha: Timestamp;
+  concepto: string;
+  tipo: TipoMovimientoCaja;
+  monto: number;
+  metodo: MetodoPago;
+  pacienteId?: string;
+  presupuestoId?: string; // presente si es un abono/pago de un presupuesto
+}

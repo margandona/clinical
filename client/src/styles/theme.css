@@ -1,0 +1,313 @@
+:root {
+  color-scheme: light;
+
+  /* Marca Maxilus (tomada del logo) */
+  --brand-purple: #641480;
+  --brand-purple-dark: #4a0f61;
+  --brand-purple-light: #f3e8fb;
+  --brand-pink: #e5127a;
+  --brand-pink-light: #ffe3f0;
+
+  /* Superficies y tinta */
+  --surface: #ffffff;
+  --page: #f9f8fb;
+  --text-primary: #201029;
+  --text-secondary: #55515c;
+  --text-muted: #8b8791;
+  --border: rgba(32, 16, 41, 0.12);
+  --gridline: #e7e3ea;
+
+  /* Estado (fijo, no depende del tema) */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --success-text: #006300;
+  --critical-text: #b3261e;
+
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(32, 16, 41, 0.06), 0 4px 12px rgba(32, 16, 41, 0.06);
+
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--page);
+}
+
+h1, h2, h3, h4 {
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+p {
+  margin: 0 0 0.75rem;
+}
+
+a {
+  color: var(--brand-purple);
+}
+
+/* Botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0.55rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--brand-purple);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--brand-purple-dark);
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--brand-purple);
+  color: var(--brand-purple);
+}
+
+/* Formularios */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.field input,
+.field select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.7rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid var(--brand-purple);
+  outline-offset: 1px;
+}
+
+/* Tarjetas */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+.card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card-header h2 {
+  margin: 0;
+}
+
+/* Tablas */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--gridline);
+  white-space: nowrap;
+}
+
+.data-table th {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: var(--page);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Badges de estado (icono + texto, nunca solo color) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.badge--good {
+  color: var(--status-good);
+  background: rgba(12, 163, 12, 0.12);
+}
+
+.badge--warning {
+  color: #8a5a00;
+  background: rgba(250, 178, 25, 0.22);
+}
+
+.badge--serious {
+  color: #9c4423;
+  background: rgba(236, 131, 90, 0.18);
+}
+
+.badge--critical {
+  color: var(--status-critical);
+  background: rgba(208, 59, 59, 0.12);
+}
+
+/* Barra de magnitud (una sola serie -> un solo hue de marca) */
+.bar-row {
+  display: grid;
+  grid-template-columns: 9rem 1fr 3.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.bar-row .bar-label {
+  color: var(--text-secondary);
+}
+
+.bar-track {
+  background: var(--gridline);
+  border-radius: 999px;
+  height: 0.6rem;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--brand-purple);
+  border-radius: 999px;
+}
+
+.bar-row .bar-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Nota de datos de ejemplo */
+.mock-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--page);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.7rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Stat tiles */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.1rem 1.25rem;
+}
+
+.stat-tile .stat-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.stat-tile .stat-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.stat-tile .stat-delta {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.stat-tile .stat-delta.up {
+  color: var(--success-text);
+}
+
+.stat-tile .stat-delta.down {
+  color: var(--critical-text);
+}
