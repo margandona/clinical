@@ -230,7 +230,7 @@ async function main() {
   }
 
   for (const p of profesionales) {
-    batch.set(db.collection("profesionales").doc(p.id), { clinicaId: CLINICA_ID, nombre: p.nombre, especialidadIds: p.especialidadIds });
+    batch.set(db.collection("profesionales").doc(p.id), { clinicaId: CLINICA_ID, nombre: p.nombre, especialidadIds: p.especialidadIds, comisionPorcentaje: p.comisionPorcentaje });
   }
 
   for (const p of pacientes) {

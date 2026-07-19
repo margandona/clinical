@@ -10,11 +10,15 @@ service firebase.storage {
     // solo del admin de esa clínica, y solo imágenes de hasta 5MB.
     match /landing/{clinicaId}/{allPaths=**} {
       allow read: if true;
+      // request.resource es null en un delete — sin el `|| request.resource == null`
+      // ninguna borradura pasaría nunca (ni siquiera la del admin), porque
+      // el resto de la condición evalúa sobre un valor inexistente.
       allow write: if request.auth != null
         && request.auth.token.rol == 'admin'
         && request.auth.token.clinicaId == clinicaId
-        && request.resource.size < 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && (request.resource == null
+          || (request.resource.size < 5 * 1024 * 1024
+            && request.resource.contentType.matches('image/.*')));
     }
 
     match /{allPaths=**} {
