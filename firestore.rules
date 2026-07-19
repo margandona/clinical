@@ -55,15 +55,22 @@ service cloud.firestore {
       allow create: if esAdminDeLaClinica(request.resource.data.clinicaId)
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() > 0
-        && request.resource.data.especialidadIds is list;
+        && request.resource.data.especialidadIds is list
+        && request.resource.data.comisionPorcentaje is number
+        && request.resource.data.comisionPorcentaje >= 0
+        && request.resource.data.comisionPorcentaje <= 100;
 
-      // Admin edita el nombre y/o la lista de especialidades asignadas
-      // (asignación de servicios a un profesional).
+      // Admin edita el nombre, la lista de especialidades asignadas y/o el
+      // % de comisión (asignación de servicios y remuneración variable de
+      // un profesional).
       allow update: if esAdminDeLaClinica(resource.data.clinicaId)
         && request.resource.data.clinicaId == resource.data.clinicaId
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() > 0
-        && request.resource.data.especialidadIds is list;
+        && request.resource.data.especialidadIds is list
+        && request.resource.data.comisionPorcentaje is number
+        && request.resource.data.comisionPorcentaje >= 0
+        && request.resource.data.comisionPorcentaje <= 100;
 
       allow delete: if esAdminDeLaClinica(resource.data.clinicaId);
     }
@@ -238,6 +245,7 @@ service cloud.firestore {
     // seguimiento automático todavía — RF-06/E5 queda para más adelante).
     function datosPresupuestoValidos(datos) {
       return datos.pacienteId is string && datos.pacienteId.size() > 0
+        && datos.profesionalId is string && datos.profesionalId.size() > 0
         && datos.tratamiento is string && datos.tratamiento.size() > 0
         && datos.monto is number && datos.monto > 0
         && datos.estado in ["pendiente", "aceptado", "rechazado"]
@@ -275,6 +283,85 @@ service cloud.firestore {
       // Los movimientos de caja no se editan ni se borran una vez
       // registrados (integridad del libro de caja); un error se corrige
       // con un movimiento de reverso, no editando el original.
+    }
+
+    // E-landing: contenido de marketing de la home pública (banners,
+    // destacados, alianzas, testimonios). Lectura pública de los items
+    // activos (la landing no tiene sesión); el admin de la clínica además
+    // puede leer los inactivos (los ve en su panel) y es el único que
+    // puede escribir.
+    function esItemLandingValido(datos) {
+      return datos.clinicaId is string && datos.clinicaId.size() > 0
+        && datos.orden is number
+        && datos.activo is bool;
+    }
+
+    match /banners/{bannerId} {
+      allow read: if resource.data.activo == true || esAdminDeLaClinica(resource.data.clinicaId);
+
+      allow create: if esAdminDeLaClinica(request.resource.data.clinicaId)
+        && esItemLandingValido(request.resource.data)
+        && request.resource.data.titulo is string && request.resource.data.titulo.size() > 0
+        && request.resource.data.imagenUrl is string && request.resource.data.imagenUrl.size() > 0;
+
+      allow update: if esAdminDeLaClinica(resource.data.clinicaId)
+        && request.resource.data.clinicaId == resource.data.clinicaId
+        && esItemLandingValido(request.resource.data)
+        && request.resource.data.titulo is string && request.resource.data.titulo.size() > 0
+        && request.resource.data.imagenUrl is string && request.resource.data.imagenUrl.size() > 0;
+
+      allow delete: if esAdminDeLaClinica(resource.data.clinicaId);
+    }
+
+    match /destacados/{destacadoId} {
+      allow read: if resource.data.activo == true || esAdminDeLaClinica(resource.data.clinicaId);
+
+      allow create: if esAdminDeLaClinica(request.resource.data.clinicaId)
+        && esItemLandingValido(request.resource.data)
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0
+        && request.resource.data.imagenUrl is string && request.resource.data.imagenUrl.size() > 0;
+
+      allow update: if esAdminDeLaClinica(resource.data.clinicaId)
+        && request.resource.data.clinicaId == resource.data.clinicaId
+        && esItemLandingValido(request.resource.data)
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0
+        && request.resource.data.imagenUrl is string && request.resource.data.imagenUrl.size() > 0;
+
+      allow delete: if esAdminDeLaClinica(resource.data.clinicaId);
+    }
+
+    match /alianzas/{alianzaId} {
+      allow read: if resource.data.activo == true || esAdminDeLaClinica(resource.data.clinicaId);
+
+      allow create: if esAdminDeLaClinica(request.resource.data.clinicaId)
+        && esItemLandingValido(request.resource.data)
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0
+        && request.resource.data.logoUrl is string && request.resource.data.logoUrl.size() > 0;
+
+      allow update: if esAdminDeLaClinica(resource.data.clinicaId)
+        && request.resource.data.clinicaId == resource.data.clinicaId
+        && esItemLandingValido(request.resource.data)
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0
+        && request.resource.data.logoUrl is string && request.resource.data.logoUrl.size() > 0;
+
+      allow delete: if esAdminDeLaClinica(resource.data.clinicaId);
+    }
+
+    match /testimonios/{testimonioId} {
+      allow read: if resource.data.activo == true || esAdminDeLaClinica(resource.data.clinicaId);
+
+      allow create: if esAdminDeLaClinica(request.resource.data.clinicaId)
+        && esItemLandingValido(request.resource.data)
+        && request.resource.data.nombreCliente is string && request.resource.data.nombreCliente.size() > 0
+        && request.resource.data.texto is string && request.resource.data.texto.size() > 0;
+
+      allow update: if esAdminDeLaClinica(resource.data.clinicaId)
+        && request.resource.data.clinicaId == resource.data.clinicaId
+        && esItemLandingValido(request.resource.data)
+        && request.resource.data.nombreCliente is string && request.resource.data.nombreCliente.size() > 0
+        && request.resource.data.texto is string && request.resource.data.texto.size() > 0;
+
+      allow delete: if esAdminDeLaClinica(resource.data.clinicaId);
     }
 
     match /{document=**} {

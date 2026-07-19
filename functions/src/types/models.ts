@@ -30,6 +30,7 @@ export interface Profesional {
   clinicaId: string;
   nombre: string;
   especialidadIds: string[];
+  comisionPorcentaje: number; // % sobre lo efectivamente cobrado en caja de sus tratamientos
 }
 
 export interface Paciente {
@@ -45,6 +46,7 @@ export interface UsuarioRol {
   clinicaId: string;
   rol: Rol;
   email: string;
+  rut?: string; // obligatorio para admin/secretaria/dentista; el paciente ya usa su RUT como pacienteId
   profesionalId?: string; // presente si rol === "dentista"
   pacienteId?: string; // presente si rol === "paciente" (RUT)
 }
@@ -75,6 +77,7 @@ export interface Presupuesto {
   id: string;
   clinicaId: string;
   pacienteId: string;
+  profesionalId: string; // doctor dueño del tratamiento (obligatorio: habilita el cálculo de comisiones)
   especialidadId?: string; // opcional: permite agrupar ingresos por especialidad en métricas
   tratamiento: string; // descripción libre (ej. "Ortodoncia (plan anual)")
   monto: number;
@@ -120,4 +123,50 @@ export interface MovimientoCaja {
   metodo: MetodoPago;
   pacienteId?: string;
   presupuestoId?: string; // presente si es un abono/pago de un presupuesto
+  profesionalId?: string; // derivado del presupuesto vinculado; sin esto no cuenta para comisiones
+}
+
+// E-landing: contenido de marketing de la home pública, editable por el
+// admin. `orden` controla la posición (ascendente) y `activo` permite
+// ocultar un item sin borrarlo (mismo patrón que `bloqueado` en Paciente).
+
+export interface Banner {
+  id: string;
+  clinicaId: string;
+  titulo: string;
+  imagenUrl: string;
+  linkUrl?: string;
+  orden: number;
+  activo: boolean;
+}
+
+export interface Destacado {
+  id: string;
+  clinicaId: string;
+  nombre: string;
+  descripcion?: string;
+  imagenUrl: string;
+  orden: number;
+  activo: boolean;
+}
+
+export interface Alianza {
+  id: string;
+  clinicaId: string;
+  nombre: string;
+  logoUrl: string;
+  linkUrl?: string;
+  orden: number;
+  activo: boolean;
+}
+
+export interface Testimonio {
+  id: string;
+  clinicaId: string;
+  nombreCliente: string;
+  texto: string;
+  calificacion?: number;
+  fotoUrl?: string;
+  orden: number;
+  activo: boolean;
 }

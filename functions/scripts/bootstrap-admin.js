@@ -4,7 +4,10 @@
  * huevo-gallina para poder usar la Cloud Function `setUserRole` despues.
  *
  * Uso (con los emuladores ya corriendo, ej. `npm run emulators`):
- *   npm run bootstrap:admin -- admin@maxilus.local Admin123!
+ *   npm run bootstrap:admin -- admin@maxilus.local Admin123! [rut]
+ *
+ * El RUT es opcional pero, si se pasa, permite probar también el login
+ * alterno por RUT ("Clave Única" simulada) con esta misma cuenta.
  */
 
 // Apunta al emulador local salvo que el caller override explicitamente
@@ -16,12 +19,19 @@ process.env.FIRESTORE_EMULATOR_HOST =
 
 const admin = require("firebase-admin");
 
-const [, , email, password] = process.argv;
+const [, , email, password, rut] = process.argv;
 
 if (!email || !password) {
-  console.error("Uso: npm run bootstrap:admin -- <email> <password>");
+  console.error("Uso: npm run bootstrap:admin -- <email> <password> [rut]");
   process.exit(1);
 }
+
+const rutNormalizado = rut
+  ? rut
+      .trim()
+      .toUpperCase()
+      .replace(/[.\-\s]/g, "")
+  : undefined;
 
 admin.initializeApp({ projectId: "maxilus-dental" });
 
@@ -48,6 +58,7 @@ async function main() {
         clinicaId: "maxilus",
         rol: "admin",
         email,
+        ...(rutNormalizado ? { rut: rutNormalizado } : {}),
       },
       { merge: true }
     );

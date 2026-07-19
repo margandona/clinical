@@ -123,6 +123,7 @@ async function registrarMovimiento() {
 
   guardando.value = true;
   try {
+    const presupuestoVinculado = presupuestos.value.find((p) => p.id === presupuestoId.value);
     await addDoc(collection(db, "caja"), {
       clinicaId: cid,
       fecha: Timestamp.now(),
@@ -132,6 +133,7 @@ async function registrarMovimiento() {
       metodo: metodo.value,
       ...(pacienteEncontrado.value ? { pacienteId: pacienteEncontrado.value.id } : {}),
       ...(presupuestoId.value ? { presupuestoId: presupuestoId.value } : {}),
+      ...(presupuestoVinculado ? { profesionalId: presupuestoVinculado.profesionalId } : {}),
     });
     limpiarFormulario();
   } catch (e) {
@@ -212,6 +214,9 @@ async function registrarMovimiento() {
                 {{ p.tratamiento }} — saldo {{ formatoCLP.format(saldoPendiente(p)) }}
               </option>
             </select>
+            <p class="mock-note" style="margin: 0.4rem 0 0">
+              💡 Vincular el pago a un presupuesto es lo que permite calcular la comisión del doctor.
+            </p>
           </div>
           <p v-else-if="rutPaciente.trim()" class="mock-note" style="align-self: flex-end">
             No existe un paciente con ese RUT.

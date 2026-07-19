@@ -8,6 +8,7 @@ export interface Presupuesto {
   id: string;
   clinicaId: string;
   pacienteId: string;
+  profesionalId: string;
   especialidadId?: string;
   tratamiento: string;
   monto: number;
@@ -28,4 +29,5 @@ export interface MovimientoCaja {
   metodo: MetodoPago;
   pacienteId?: string;
   presupuestoId?: string;
+  profesionalId?: string;
 }

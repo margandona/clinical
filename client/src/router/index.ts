@@ -87,6 +87,12 @@ const router = createRouter({
       meta: { requiresAuth: true, roles: ["admin"], title: "Panel admin" },
     },
     {
+      path: "/admin/landing",
+      name: "admin-landing",
+      component: () => import("@/views/LandingContentView.vue"),
+      meta: { requiresAuth: true, roles: ["admin"], title: "Contenido landing" },
+    },
+    {
       path: "/:pathMatch(.*)*",
       name: "not-found",
       component: () => import("@/views/NotFoundView.vue"),

@@ -62,6 +62,7 @@ const editandoUid = ref<string | null>(null);
 const email = ref("");
 const password = ref("");
 const rol = ref<Rol>("secretaria");
+const rut = ref("");
 const profesionalId = ref("");
 const pacienteId = ref("");
 const guardando = ref(false);
@@ -72,6 +73,7 @@ function limpiarFormulario() {
   email.value = "";
   password.value = "";
   rol.value = "secretaria";
+  rut.value = "";
   profesionalId.value = "";
   pacienteId.value = "";
   error.value = "";
@@ -82,6 +84,7 @@ function editarUsuario(usuario: UsuarioRol) {
   email.value = usuario.email;
   password.value = "";
   rol.value = usuario.rol;
+  rut.value = usuario.rut ?? "";
   profesionalId.value = usuario.profesionalId ?? "";
   pacienteId.value = usuario.pacienteId ?? "";
   error.value = "";
@@ -102,6 +105,10 @@ async function guardarUsuario() {
     error.value = "Selecciona a qué paciente corresponde este usuario paciente.";
     return;
   }
+  if (rol.value !== "paciente" && !rut.value.trim()) {
+    error.value = "El RUT es obligatorio para admin, secretaria y dentista.";
+    return;
+  }
   if (!editandoUid.value && (!email.value.trim() || password.value.length < 6)) {
     error.value = "Email y una contraseña de al menos 6 caracteres son obligatorios para un usuario nuevo.";
     return;
@@ -113,6 +120,7 @@ async function guardarUsuario() {
       ...(editandoUid.value ? { uid: editandoUid.value } : { email: email.value.trim(), password: password.value }),
       rol: rol.value,
       clinicaId: cid,
+      ...(rol.value !== "paciente" ? { rut: rut.value.trim() } : {}),
       ...(rol.value === "dentista" ? { profesionalId: profesionalId.value } : {}),
       ...(rol.value === "paciente" ? { pacienteId: pacienteId.value } : {}),
     });
@@ -159,6 +167,11 @@ async function guardarUsuario() {
             </select>
           </div>
 
+          <div v-if="rol !== 'paciente'" class="field" style="max-width: 220px">
+            <label for="usuario-rut">RUT</label>
+            <input id="usuario-rut" v-model="rut" type="text" placeholder="Ej: 12345678-9" required />
+          </div>
+
           <div v-if="rol === 'dentista'" class="field" style="min-width: 220px">
             <label for="usuario-profesional">Profesional vinculado</label>
             <select id="usuario-profesional" v-model="profesionalId" required>
@@ -198,6 +211,7 @@ async function guardarUsuario() {
           <thead>
             <tr>
               <th>Email</th>
+              <th>RUT</th>
               <th>Rol</th>
               <th>Vinculado a</th>
               <th>Acciones</th>
@@ -206,6 +220,7 @@ async function guardarUsuario() {
           <tbody>
             <tr v-for="u in usuarios" :key="u.uid">
               <td>{{ u.email }}</td>
+              <td>{{ u.rut ?? "—" }}</td>
               <td><span class="badge badge--good">{{ rolLabels[u.rol] }}</span></td>
               <td>
                 <span v-if="u.rol === 'dentista'">{{ nombreProfesional(u.profesionalId) }}</span>
@@ -217,7 +232,7 @@ async function guardarUsuario() {
               </td>
             </tr>
             <tr v-if="usuarios.length === 0">
-              <td colspan="4">Aún no hay usuarios registrados.</td>
+              <td colspan="5">Aún no hay usuarios registrados.</td>
             </tr>
           </tbody>
         </table>

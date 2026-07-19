@@ -8,4 +8,8 @@ export const COLLECTIONS = {
   citas: "citas",
   presupuestos: "presupuestos",
   caja: "caja",
+  banners: "banners",
+  destacados: "destacados",
+  alianzas: "alianzas",
+  testimonios: "testimonios",
 } as const;

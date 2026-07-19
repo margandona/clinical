@@ -13,6 +13,7 @@ export interface Profesional {
   clinicaId: string;
   nombre: string;
   especialidadIds: string[];
+  comisionPorcentaje: number;
 }
 
 export interface Box {

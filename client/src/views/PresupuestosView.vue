@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthStore } from "@/stores/auth";
-import type { Especialidad } from "@/types/catalogo";
+import type { Especialidad, Profesional } from "@/types/catalogo";
 import type { Paciente } from "@/types/catalogo";
 import type { EstadoPresupuesto, Presupuesto } from "@/types/finanzas";
 
@@ -45,6 +45,7 @@ function estaVencido(p: Presupuesto) {
 const presupuestos = ref<Presupuesto[]>([]);
 const pacientes = ref<Paciente[]>([]);
 const especialidades = ref<Especialidad[]>([]);
+const profesionales = ref<Profesional[]>([]);
 let unsubs: Array<() => void> = [];
 
 onMounted(() => {
@@ -61,6 +62,14 @@ onMounted(() => {
       presupuestos.value = snap.docs
         .map((d) => ({ id: d.id, ...(d.data() as Omit<Presupuesto, "id">) }))
         .sort((a, b) => b.emision.toMillis() - a.emision.toMillis());
+    })
+  );
+
+  // Nombre de profesional se muestra en la tabla para cualquier rol (el
+  // paciente también quiere saber quién lo está tratando).
+  unsubs.push(
+    onSnapshot(query(collection(db, "profesionales"), where("clinicaId", "==", cid)), (snap) => {
+      profesionales.value = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Profesional, "id">) }));
     })
   );
 
@@ -84,9 +93,14 @@ function nombrePaciente(id: string) {
   return pacientes.value.find((p) => p.id === id)?.nombre ?? id;
 }
 
+function nombreProfesional(id: string) {
+  return profesionales.value.find((p) => p.id === id)?.nombre ?? id;
+}
+
 // --- Formulario de nuevo/editado presupuesto ---
 const editandoId = ref<string | null>(null);
 const rutPaciente = ref("");
+const profesionalId = ref("");
 const especialidadId = ref("");
 const tratamiento = ref("");
 const monto = ref<number | null>(null);
@@ -98,6 +112,7 @@ const pacienteEncontrado = computed(() => pacientes.value.find((p) => p.id === r
 function limpiarFormulario() {
   editandoId.value = null;
   rutPaciente.value = "";
+  profesionalId.value = "";
   especialidadId.value = "";
   tratamiento.value = "";
   monto.value = null;
@@ -107,6 +122,7 @@ function limpiarFormulario() {
 function editarPresupuesto(presupuesto: Presupuesto) {
   editandoId.value = presupuesto.id;
   rutPaciente.value = presupuesto.pacienteId;
+  profesionalId.value = presupuesto.profesionalId;
   especialidadId.value = presupuesto.especialidadId ?? "";
   tratamiento.value = presupuesto.tratamiento;
   monto.value = presupuesto.monto;
@@ -132,6 +148,10 @@ async function guardarPresupuesto() {
     error.value = "El monto debe ser mayor a 0.";
     return;
   }
+  if (!profesionalId.value) {
+    error.value = "Selecciona el profesional dueño de este tratamiento.";
+    return;
+  }
 
   guardando.value = true;
   try {
@@ -141,6 +161,7 @@ async function guardarPresupuesto() {
       await updateDoc(doc(db, "presupuestos", editandoId.value), {
         clinicaId: cid,
         pacienteId: rut,
+        profesionalId: profesionalId.value,
         ...(especialidadId.value ? { especialidadId: especialidadId.value } : {}),
         tratamiento: tratamientoLimpio,
         monto: monto.value,
@@ -151,6 +172,7 @@ async function guardarPresupuesto() {
       await addDoc(collection(db, "presupuestos"), {
         clinicaId: cid,
         pacienteId: rut,
+        profesionalId: profesionalId.value,
         ...(especialidadId.value ? { especialidadId: especialidadId.value } : {}),
         tratamiento: tratamientoLimpio,
         monto: monto.value,
@@ -171,6 +193,7 @@ async function cambiarEstado(presupuesto: Presupuesto, estado: EstadoPresupuesto
   await updateDoc(doc(db, "presupuestos", presupuesto.id), {
     clinicaId: presupuesto.clinicaId,
     pacienteId: presupuesto.pacienteId,
+    profesionalId: presupuesto.profesionalId,
     ...(presupuesto.especialidadId ? { especialidadId: presupuesto.especialidadId } : {}),
     tratamiento: presupuesto.tratamiento,
     monto: presupuesto.monto,
@@ -201,6 +224,14 @@ async function cambiarEstado(presupuesto: Presupuesto, estado: EstadoPresupuesto
           <p v-else-if="pacienteEncontrado" class="mock-note" style="align-self: flex-end">
             Paciente: {{ pacienteEncontrado.nombre }}
           </p>
+
+          <div class="field" style="min-width: 200px">
+            <label for="presupuesto-profesional">Profesional</label>
+            <select id="presupuesto-profesional" v-model="profesionalId" required>
+              <option value="" disabled>Selecciona un profesional</option>
+              <option v-for="p in profesionales" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+            </select>
+          </div>
 
           <div class="field" style="min-width: 200px">
             <label for="presupuesto-especialidad">Especialidad (opcional)</label>
@@ -249,6 +280,7 @@ async function cambiarEstado(presupuesto: Presupuesto, estado: EstadoPresupuesto
           <thead>
             <tr>
               <th v-if="puedeGestionar">Paciente</th>
+              <th>Profesional</th>
               <th>Tratamiento</th>
               <th>Monto</th>
               <th>Emisión</th>
@@ -259,6 +291,7 @@ async function cambiarEstado(presupuesto: Presupuesto, estado: EstadoPresupuesto
           <tbody>
             <tr v-for="p in presupuestos" :key="p.id">
               <td v-if="puedeGestionar">{{ nombrePaciente(p.pacienteId) }}</td>
+              <td>{{ nombreProfesional(p.profesionalId) }}</td>
               <td>{{ p.tratamiento }}</td>
               <td>{{ formatoCLP.format(p.monto) }}</td>
               <td>{{ p.emision.toDate().toLocaleDateString("es-CL") }}</td>
@@ -287,7 +320,7 @@ async function cambiarEstado(presupuesto: Presupuesto, estado: EstadoPresupuesto
               </td>
             </tr>
             <tr v-if="presupuestos.length === 0">
-              <td :colspan="puedeGestionar ? 6 : 4">Aún no hay presupuestos.</td>
+              <td :colspan="puedeGestionar ? 7 : 5">Aún no hay presupuestos.</td>
             </tr>
           </tbody>
         </table>

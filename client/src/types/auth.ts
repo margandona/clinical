@@ -9,6 +9,7 @@ export interface UsuarioRol {
   clinicaId: string;
   rol: Rol;
   email: string;
+  rut?: string;
   profesionalId?: string;
   pacienteId?: string;
 }

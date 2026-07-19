@@ -56,16 +56,19 @@ onUnmounted(() => {
 // --- Profesionales (doctores): alta, edición de nombre y baja ---
 const editandoProfesionalId = ref<string | null>(null);
 const nuevoProfesionalNombre = ref("");
+const nuevoProfesionalComision = ref(0);
 const guardandoProfesional = ref(false);
 
 function editarProfesional(profesional: Profesional) {
   editandoProfesionalId.value = profesional.id;
   nuevoProfesionalNombre.value = profesional.nombre;
+  nuevoProfesionalComision.value = profesional.comisionPorcentaje;
 }
 
 function cancelarEdicionProfesional() {
   editandoProfesionalId.value = null;
   nuevoProfesionalNombre.value = "";
+  nuevoProfesionalComision.value = 0;
 }
 
 async function guardarProfesional() {
@@ -81,12 +84,14 @@ async function guardarProfesional() {
         clinicaId,
         nombre,
         especialidadIds: actual?.especialidadIds ?? [],
+        comisionPorcentaje: nuevoProfesionalComision.value,
       });
     } else {
       await addDoc(collection(db, "profesionales"), {
         clinicaId,
         nombre,
         especialidadIds: [],
+        comisionPorcentaje: nuevoProfesionalComision.value,
       });
     }
     cancelarEdicionProfesional();
@@ -316,6 +321,10 @@ async function eliminarServicio(especialidad: Especialidad) {
           <label for="profesional-nombre">Nombre del profesional</label>
           <input id="profesional-nombre" v-model="nuevoProfesionalNombre" type="text" placeholder="Ej: Dra. Soto" />
         </div>
+        <div class="field" style="max-width: 140px; margin-bottom: 0">
+          <label for="profesional-comision">Comisión (%)</label>
+          <input id="profesional-comision" v-model.number="nuevoProfesionalComision" type="number" min="0" max="100" step="1" />
+        </div>
         <button type="submit" class="btn btn-primary" :disabled="guardandoProfesional || !nuevoProfesionalNombre.trim()">
           {{ editandoProfesionalId ? "Guardar cambios" : "Agregar" }}
         </button>
@@ -330,6 +339,7 @@ async function eliminarServicio(especialidad: Especialidad) {
             <tr>
               <th>Nombre</th>
               <th>Servicios asignados</th>
+              <th>Comisión</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -344,13 +354,14 @@ async function eliminarServicio(especialidad: Especialidad) {
                     .join(", ") || "—"
                 }}
               </td>
+              <td>{{ p.comisionPorcentaje }}%</td>
               <td style="display: flex; gap: 0.5rem">
                 <button type="button" class="btn btn-secondary" @click="editarProfesional(p)">Editar</button>
                 <button type="button" class="btn btn-secondary" @click="eliminarProfesional(p)">Eliminar</button>
               </td>
             </tr>
             <tr v-if="profesionales.length === 0">
-              <td colspan="3">Aún no hay profesionales registrados.</td>
+              <td colspan="4">Aún no hay profesionales registrados.</td>
             </tr>
           </tbody>
         </table>

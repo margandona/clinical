@@ -29,6 +29,8 @@ const iconPaths: Record<NavIcon, string> = {
   metricas: '<path d="M4 20V11"/><path d="M11 20V4"/><path d="M18 20v-8"/><path d="M3 20h18"/>',
   usuarios:
     '<circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.6 5.5-5.6s5.5 2.3 5.5 5.6"/><path d="M16 4.5c1.4.4 2.4 1.7 2.4 3.2s-1 2.8-2.4 3.2"/><path d="M18.5 14.6c1.8.6 3 2.4 3 4.4"/>',
+  landing:
+    '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3 16 8 12l4 3.5 3-2.5 6 4"/>',
 };
 </script>
 

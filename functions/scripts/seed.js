@@ -50,10 +50,10 @@ const boxes = [
 ];
 
 const profesionales = [
-  { id: "prof-munoz", nombre: "Dra. Muñoz", especialidadIds: ["esp-general", "esp-estetica"] },
-  { id: "prof-fuentes", nombre: "Dr. Fuentes", especialidadIds: ["esp-ortodoncia"] },
-  { id: "prof-lagos", nombre: "Dr. Lagos", especialidadIds: ["esp-endodoncia"] },
-  { id: "prof-ortiz", nombre: "Dra. Ortiz", especialidadIds: ["esp-implantologia", "esp-general"] },
+  { id: "prof-munoz", nombre: "Dra. Muñoz", especialidadIds: ["esp-general", "esp-estetica"], comisionPorcentaje: 40 },
+  { id: "prof-fuentes", nombre: "Dr. Fuentes", especialidadIds: ["esp-ortodoncia"], comisionPorcentaje: 35 },
+  { id: "prof-lagos", nombre: "Dr. Lagos", especialidadIds: ["esp-endodoncia"], comisionPorcentaje: 45 },
+  { id: "prof-ortiz", nombre: "Dra. Ortiz", especialidadIds: ["esp-implantologia", "esp-general"], comisionPorcentaje: 40 },
 ];
 
 const pacientes = [
@@ -117,6 +117,7 @@ const presupuestos = [
   {
     id: "presupuesto-1",
     pacienteId: "11111111-1",
+    profesionalId: "prof-lagos",
     especialidadId: "esp-endodoncia",
     tratamiento: "Endodoncia",
     monto: 180000,
@@ -126,6 +127,7 @@ const presupuestos = [
   {
     id: "presupuesto-2",
     pacienteId: "22222222-2",
+    profesionalId: "prof-munoz",
     especialidadId: "esp-estetica",
     tratamiento: "Blanqueamiento dental",
     monto: 150000,
@@ -135,6 +137,7 @@ const presupuestos = [
   {
     id: "presupuesto-3",
     pacienteId: "33333333-3",
+    profesionalId: "prof-fuentes",
     especialidadId: "esp-ortodoncia",
     tratamiento: "Ortodoncia (plan anual)",
     monto: 1200000,
@@ -144,6 +147,7 @@ const presupuestos = [
   {
     id: "presupuesto-4",
     pacienteId: "55555555-5",
+    profesionalId: "prof-ortiz",
     especialidadId: "esp-implantologia",
     tratamiento: "Implante dental unitario",
     monto: 600000,
@@ -153,6 +157,7 @@ const presupuestos = [
   {
     id: "presupuesto-5",
     pacienteId: "44444444-4",
+    profesionalId: "prof-munoz",
     especialidadId: "esp-general",
     tratamiento: "Exodoncia (extracción)",
     monto: 60000,
@@ -171,6 +176,7 @@ const caja = [
     metodo: "Transferencia",
     pacienteId: "11111111-1",
     presupuestoId: "presupuesto-1",
+    profesionalId: "prof-lagos",
   },
   {
     id: "caja-2",
@@ -198,6 +204,7 @@ const caja = [
     metodo: "Efectivo",
     pacienteId: "44444444-4",
     presupuestoId: "presupuesto-5",
+    profesionalId: "prof-munoz",
   },
   {
     id: "caja-5",

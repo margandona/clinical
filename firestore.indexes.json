@@ -22,6 +22,16 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "profesionalId", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" },
+        { "fieldPath": "inicio", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "citas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
         { "fieldPath": "boxId", "order": "ASCENDING" },
         { "fieldPath": "inicio", "order": "ASCENDING" }
       ]
@@ -58,6 +68,16 @@
       "fields": [
         { "fieldPath": "clinicaId", "order": "ASCENDING" },
         { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "caja",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clinicaId", "order": "ASCENDING" },
+        { "fieldPath": "profesionalId", "order": "ASCENDING" },
+        { "fieldPath": "tipo", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
       ]
     },
     {

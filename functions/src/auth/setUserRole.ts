@@ -3,6 +3,7 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import "../config/firebase-admin";
 import { COLLECTIONS } from "../config/collections";
+import { normalizarRut } from "./rut";
 import type { Rol, UsuarioRol } from "../types/models";
 
 const ROLES_VALIDOS: Rol[] = ["admin", "secretaria", "dentista", "paciente"];
@@ -13,6 +14,7 @@ interface SetUserRoleRequest {
   password?: string;
   rol: Rol;
   clinicaId: string;
+  rut?: string; // obligatorio salvo rol === "paciente" (ya tiene RUT como pacienteId)
   profesionalId?: string;
   pacienteId?: string;
 }
@@ -28,7 +30,7 @@ export const setUserRole = onCall<SetUserRoleRequest>(async (request) => {
     throw new HttpsError("permission-denied", "Solo un admin puede asignar roles.");
   }
 
-  const { uid: uidInput, email, password, rol, clinicaId, profesionalId, pacienteId } = request.data;
+  const { uid: uidInput, email, password, rol, clinicaId, rut: rutInput, profesionalId, pacienteId } = request.data;
 
   if (!clinicaId || !ROLES_VALIDOS.includes(rol)) {
     throw new HttpsError(
@@ -42,7 +44,11 @@ export const setUserRole = onCall<SetUserRoleRequest>(async (request) => {
       "Indica un uid (usuario existente) o email y password (usuario nuevo)."
     );
   }
+  if (rol !== "paciente" && !rutInput) {
+    throw new HttpsError("invalid-argument", "El RUT es obligatorio para admin, secretaria y dentista.");
+  }
 
+  const rut = rutInput ? normalizarRut(rutInput) : undefined;
   const uid = uidInput ?? (await getAuth().createUser({ email, password })).uid;
 
   await getAuth().setCustomUserClaims(uid, {
@@ -58,6 +64,7 @@ export const setUserRole = onCall<SetUserRoleRequest>(async (request) => {
     clinicaId,
     rol,
     email: targetUser.email ?? "",
+    ...(rut ? { rut } : {}),
     ...(profesionalId ? { profesionalId } : {}),
     ...(pacienteId ? { pacienteId } : {}),
   };

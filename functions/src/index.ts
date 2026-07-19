@@ -6,3 +6,5 @@ export const health = onRequest((req, res) => {
 });
 
 export { setUserRole } from "./auth/setUserRole";
+export { iniciarSesionConRut } from "./auth/iniciarSesionConRut";
+export { obtenerComisionDentista } from "./finanzas/obtenerComisionDentista";

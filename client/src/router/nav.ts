@@ -9,7 +9,8 @@ export type NavIcon =
   | "servicios"
   | "boxes"
   | "metricas"
-  | "usuarios";
+  | "usuarios"
+  | "landing";
 
 export interface NavItem {
   label: string;
@@ -48,4 +49,5 @@ export const navItems: NavItem[] = [
   { label: "Boxes", to: "/admin/boxes", icon: "boxes", roles: ["admin"] },
   { label: "Usuarios", to: "/admin/usuarios", icon: "usuarios", roles: ["admin"] },
   { label: "Panel admin", to: "/admin/metricas", icon: "metricas", roles: ["admin"] },
+  { label: "Contenido landing", to: "/admin/landing", icon: "landing", roles: ["admin"] },
 ];

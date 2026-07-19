@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { signInWithCustomToken, signInWithEmailAndPassword } from "firebase/auth";
+import { httpsCallable } from "firebase/functions";
+import { auth, functions } from "@/lib/firebase/client";
 import logo from "@/assets/logo.png";
 
 const router = useRouter();
+const modo = ref<"email" | "rut">("email");
+
 const email = ref("");
 const password = ref("");
 const error = ref<string | null>(null);
@@ -23,37 +26,104 @@ async function handleSubmit() {
     loading.value = false;
   }
 }
+
+// --- Acceso por RUT (simulación interna de Clave Única) ---
+const rut = ref("");
+const clave = ref("");
+const errorRut = ref<string | null>(null);
+const loadingRut = ref(false);
+const iniciarSesionConRutFn = httpsCallable<{ rut: string; clave: string }, { customToken: string }>(
+  functions,
+  "iniciarSesionConRut"
+);
+
+async function handleSubmitRut() {
+  errorRut.value = null;
+  loadingRut.value = true;
+  try {
+    const { data } = await iniciarSesionConRutFn({ rut: rut.value, clave: clave.value });
+    await signInWithCustomToken(auth, data.customToken);
+    router.push("/dashboard");
+  } catch {
+    errorRut.value = "RUT o clave incorrectos.";
+  } finally {
+    loadingRut.value = false;
+  }
+}
 </script>
 
 <template>
   <main class="login-page">
-    <form class="login-card card" @submit.prevent="handleSubmit">
+    <div class="login-card card">
       <img :src="logo" alt="Maxilus Dental" class="login-logo" />
       <h1>Iniciar sesión</h1>
       <p class="login-subtitle">Sistema de gestión Maxilus Dental</p>
 
-      <div class="field">
-        <label for="email">Email</label>
-        <input id="email" v-model="email" type="email" autocomplete="email" required />
-      </div>
-      <div class="field">
-        <label for="password">Contraseña</label>
-        <input
-          id="password"
-          v-model="password"
-          type="password"
-          autocomplete="current-password"
-          required
-        />
+      <div class="login-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class="login-tab"
+          :class="{ 'login-tab--active': modo === 'email' }"
+          @click="modo = 'email'"
+        >
+          Email y contraseña
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="login-tab"
+          :class="{ 'login-tab--active': modo === 'rut' }"
+          @click="modo = 'rut'"
+        >
+          RUT
+        </button>
       </div>
 
-      <p v-if="error" role="alert" class="login-error">{{ error }}</p>
+      <form v-if="modo === 'email'" @submit.prevent="handleSubmit">
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" v-model="email" type="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+        </div>
 
-      <button type="submit" class="btn btn-primary login-submit" :disabled="loading">
-        {{ loading ? "Ingresando..." : "Ingresar" }}
-      </button>
+        <p v-if="error" role="alert" class="login-error">{{ error }}</p>
+
+        <button type="submit" class="btn btn-primary login-submit" :disabled="loading">
+          {{ loading ? "Ingresando..." : "Ingresar" }}
+        </button>
+      </form>
+
+      <form v-else @submit.prevent="handleSubmitRut">
+        <div class="field">
+          <label for="rut">RUT</label>
+          <input id="rut" v-model="rut" type="text" placeholder="Ej: 12345678-9" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label for="clave">Clave</label>
+          <input id="clave" v-model="clave" type="password" autocomplete="current-password" required />
+        </div>
+
+        <p class="login-rut-note">Acceso por RUT — modo de prueba interno, en preparación para Clave Única.</p>
+
+        <p v-if="errorRut" role="alert" class="login-error">{{ errorRut }}</p>
+
+        <button type="submit" class="btn btn-primary login-submit" :disabled="loadingRut">
+          {{ loadingRut ? "Ingresando..." : "Ingresar con RUT" }}
+        </button>
+      </form>
+
       <router-link to="/" class="login-back">← Volver al inicio</router-link>
-    </form>
+    </div>
   </main>
 </template>
 
@@ -97,6 +167,40 @@ async function handleSubmit() {
   color: var(--text-secondary);
   font-size: 0.9rem;
   margin-bottom: 1.5rem;
+}
+
+.login-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+  background: var(--page);
+  border-radius: var(--radius);
+  padding: 0.25rem;
+}
+
+.login-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  border-radius: calc(var(--radius) - 4px);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.login-tab--active {
+  background: var(--surface);
+  color: var(--brand-purple);
+  box-shadow: var(--shadow);
+}
+
+.login-rut-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: left;
+  margin-bottom: 1rem;
 }
 
 .login-error {
